@@ -1,5 +1,10 @@
 # Switch Care: Asistente de Soporte para Nintendo Switch 2
 
+## Autores
+
+- Julian Arley Ruiz Gonzalez
+- Luna Anahy Chaparro Bustos
+
 Este proyecto es una propuesta académica de asistente experto para orientar incidencias de Nintendo Switch 2. Está diseñado para responder preguntas sobre encendido, carga, conexión, juegos, controles, temperatura, seguridad y buenas prácticas de soporte.
 
 La solución combina:
@@ -40,10 +45,6 @@ analista-soporte-tecnico/
 │   ├── knowledge.py
 │   ├── prompt_templates.py
 │   └── assistant.py
-├── scripts/
-│   └── generate_prompt_report.py
-└── docs/
-    └── prompt_execution_report.pdf
 ```
 
 ## Cómo funciona
@@ -111,27 +112,55 @@ GEMINI_MODEL=gemini-3.6-flash
 No publiques `.env`, no compartas la clave por capturas y revoca cualquier clave
 que haya quedado expuesta. El archivo `.gitignore` ya excluye `.env`.
 
-## Instalación
+## Instalación desde Git Bash
+
+Clona el repositorio y entra en la carpeta del proyecto:
 
 ```bash
-cd analista-soporte-tecnico
-python -m venv venv
-source venv/bin/activate   # Linux/Mac
-# o .\venv\Scripts\Activate.ps1  # Windows PowerShell
+git clone https://github.com/Ruzkyy/Soporte_nintendo_proyecto.git
+cd Soporte_nintendo_proyecto
+```
+
+Crea o activa el entorno virtual. Si el repositorio ya incluye un entorno local
+en tu equipo, actívalo; de lo contrario, créalo:
+
+```bash
+python -m venv .venv
+source .venv/Scripts/activate
+```
+
+Instala las dependencias:
+
+```bash
 pip install -r requirements.txt
 ```
 
-## Ejecución paso a paso
+## Configuración de la API
+
+Copia el archivo de ejemplo y edítalo con tu clave personal:
+
+```bash
+cp .env.example .env
+```
+
+El archivo `.env` debe contener:
+
+```env
+GEMINI_API_KEY=tu_clave_de_gemini
+GEMINI_MODEL=gemini-3.6-flash
+```
+
+No subas `.env` a GitHub ni compartas su contenido. `.gitignore` ya excluye
+ese archivo. Si no configuras la clave, el programa funciona en modo
+demostración y muestra el contexto local recuperado.
+
+## Ejecución en consola
 
 ```bash
 python main.py
 ```
 
-1. `src/config.py` carga las variables de `.env`.
-2. `src/knowledge.py` lee el manual local y recupera los fragmentos con mayor coincidencia.
-3. `src/prompt_templates.py` construye el prompt con reglas, ejemplos few-shot y etiquetas XML.
-4. `src/assistant.py` envía el contexto al modelo configurado y valida la respuesta JSON.
-5. Si no existe `GEMINI_API_KEY`, se ejecuta un modo demostración sin realizar llamadas externas.
+Escribe una consulta y presiona Enter. Para terminar, escribe `salir`.
 
 Ejemplo de pregunta:
 
@@ -141,16 +170,14 @@ Pregunta> Mi Nintendo Switch 2 no enciende
 
 ## Ejecución de la interfaz web
 
-Instala las dependencias y ejecuta el servidor web:
+Con el entorno virtual activo, ejecuta:
 
 ```bash
-pip install -r requirements.txt
 python web_app.py
 ```
 
 Después abre `http://127.0.0.1:5000` en el navegador. La interfaz envía las
-preguntas a `/api/chat`, donde se utiliza `SupportAssistant`, el manual local,
-el RAG y Gemini configurado en `.env`.
+preguntas al endpoint `/api/chat`.
 
 Ejemplo de interacción:
 
@@ -176,49 +203,24 @@ El asistente responde con un JSON estructurado:
 }
 ```
 
-## Generación del PDF explicativo
+## Flujo de procesamiento
 
-Se incluye un script que genera un reporte PDF con:
+1. `src/config.py` carga las variables de `.env`.
+2. `src/knowledge.py` lee el manual local y recupera los fragmentos relevantes.
+3. `src/prompt_templates.py` construye el prompt con reglas, ejemplos y etiquetas XML.
+4. `src/assistant.py` envía la pregunta y el contexto al modelo configurado.
+5. La respuesta se limpia y se entrega en formato JSON.
 
-- explicación del prompt;
-- esquema de flujo del asistente;
-- ejemplo de few-shot;
-- diagrama del proceso de RAG;
-- notas de ejecución.
+## Objetivo del proyecto
 
-```bash
-python scripts/generate_prompt_report.py
-```
+Este repositorio implementa el avance de diseño de prompts y un prototipo RAG
+para soporte técnico. Define las instrucciones del sistema, integra ejemplos de
+respuesta, utiliza delimitadores XML y recupera información desde un manual
+local.
 
-El archivo generado en `docs/prompt_execution_report.pdf` documenta el prompt,
-el few-shot, los delimitadores, el flujo RAG, la configuración del `.env` y un
-ejemplo de ejecución. Para una entrega formal se recomienda acompañarlo con
-capturas de la terminal y de la interfaz web mostrando una consulta real.
+## Privacidad y alcance
 
-## Objetivo académico
-
-Este repositorio cumple con el avance 1 del proyecto de IA aplicada: define claramente la estructura de instrucciones del sistema, integra ejemplos de respuesta, utiliza delimitadores para separar contenido y prepara la base para un sistema RAG más completo con agentes.
-
-## Nota de privacidad y alcance
-
-Los documentos y la recuperación de contexto se procesan localmente. Cuando se
-configura `GEMINI_API_KEY`, la pregunta y los fragmentos recuperados se envían a
-la API de Gemini, por lo que esta versión no es completamente local. Para una
-privacidad total debe sustituirse el cliente de Gemini por un modelo local. El
-proyecto implementa un asistente RAG de un solo flujo; no incluye todavía una
-arquitectura multiagente autónoma.
-
-## Publicación en GitHub
-
-Después de crear tu `.env` local, publica únicamente los archivos del proyecto:
-
-```bash
-git init
-git add .
-git commit -m "Entrega inicial del asistente RAG de soporte"
-git branch -M main
-git remote add origin https://github.com/Ruzkyy/Soporte_nintendo_proyecto.git
-git push -u origin main
-```
-
-Antes de hacer `push`, verifica que `.env` no aparezca en `git status`.
+El manual y la recuperación de información se procesan localmente. Si se
+configura `GEMINI_API_KEY`, la pregunta y los fragmentos recuperados se envían
+a la API de Gemini. Para un funcionamiento completamente local sería necesario
+sustituir ese cliente por un modelo instalado en el equipo.
