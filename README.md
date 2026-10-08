@@ -210,6 +210,3 @@ El chat y la recuperación local están implementados. La evaluación cuantitati
 - Julian Arley Ruiz Gonzalez
 - Luna Anahy Chaparro Bustos
 
-## Autor
-
-**Ruzky**

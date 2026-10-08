@@ -1,10 +1,9 @@
 import json
 
-from src.assistant import SupportAssistant
+from web_app import app, assistant
 
 
 if __name__ == "__main__":
-    assistant = SupportAssistant()
     print("Asistente de Soporte Técnico")
     print("Escribe 'salir' para terminar.\n")
 
