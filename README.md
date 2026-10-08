@@ -34,20 +34,18 @@ Construir un asistente web que ayude a localizar y explicar instrucciones de los
 | Documentos | `pypdf` para extraer texto de PDF |
 | Configuración | `python-dotenv` y variables de entorno |
 | Evaluación | Ragas y un dataset local de 15 preguntas; el script de evaluación aún requiere actualización del modelo evaluador |
-| Despliegue | Frontend estático y proxy en Vercel; backend Flask en un servicio Python externo |
+| Despliegue | Aplicación Flask y frontend en una Vercel Function |
 
 Gemini se configura con `gemini-3.6-flash` como modelo principal y `gemini-3.5-flash` / `gemini-3.5-flash-lite` como respaldos predeterminados. Los nombres y la disponibilidad dependen de la API y de la cuenta utilizada.
 
 ## Arquitectura implementada
 
-La aplicación sigue una arquitectura cliente-servidor modular. En local, Flask sirve el frontend y el endpoint de chat. En Vercel, el frontend se sirve como archivo estático y las consultas a `/api/*` se reescriben al backend Flask alojado en un servicio Python externo. El asistente coordina la recuperación y la generación; la carga de documentos, división de texto e índice vectorial están separados en módulos. La extracción, los embeddings y la búsqueda se ejecutan en el backend. Si se configura Gemini, solo se envían la pregunta, el historial recibido y los fragmentos recuperados, no el corpus completo.
+La aplicación sigue una arquitectura cliente-servidor modular. Flask sirve el frontend y el endpoint de chat tanto localmente como en Vercel. El entrypoint `app.py` reexporta la aplicación de `web_app.py`; el asistente coordina la recuperación y la generación, y la carga de documentos, división de texto e índice vectorial están separados en módulos. La extracción, los embeddings y la búsqueda se ejecutan en la Function. Si se configura Gemini, solo se envían la pregunta, el historial recibido y los fragmentos recuperados, no el corpus completo.
 
 ```mermaid
 flowchart LR
     U[Usuario] -->|Navega y consulta| F[Frontend HTML, CSS y JavaScript]
-    F -->|Local: POST /api/chat| W[Flask]
-    F -->|Vercel: POST /api/chat| R[Rewrite hacia backend externo]
-    R --> W
+    F -->|POST /api/chat| W[Flask local o Vercel]
     W --> A[SupportAssistant]
     A -->|Consulta| V[VectorStore]
     P[PDF locales] --> L[loaders.py]
@@ -94,13 +92,13 @@ El corpus actual contiene 10 manuales PDF europeos de Nintendo Switch 2, incluid
 │   └── vector_store.py           # Embeddings, FAISS y recuperación
 ├── .env.example
 ├── index.html                    # Interfaz del chat
+├── app.py                        # Entrypoint Flask detectado por Vercel
 ├── main.py                       # Ejecución en consola
 ├── web_app.py                    # Aplicación Flask y API
-├── requirements.txt              # Sin dependencias para Vercel estático
-├── requirements-backend.txt      # Dependencias del backend RAG
-├── requirements-eval.txt         # Dependencias adicionales para evaluación
-├── vercel.json                   # Rewrite de /api hacia el backend
-├── .vercelignore                 # Excluye backend y corpus del despliegue Vercel
+├── requirements.txt              # Dependencias runtime, PyTorch CPU
+├── requirements.txt              # Dependencias runtime de Vercel
+├── vercel.json                   # Configuración Vercel
+├── .vercelignore                 # Excluye entorno local y evaluación
 └── README.md
 ```
 
@@ -136,13 +134,13 @@ source .venv/Scripts/activate
 Instala las dependencias:
 
 ```bash
-python -m pip install -r requirements-backend.txt
+python -m pip install -r requirements.txt
 ```
 
 Para ejecutar la evaluación Ragas, instala también sus dependencias:
 
 ```bash
-python -m pip install -r requirements-eval.txt
+python -m pip install pandas ragas langchain-google-genai
 ```
 
 ## Variables de entorno
@@ -156,7 +154,7 @@ GEMINI_MODEL=
 
 `GEMINI_API_KEY` es la variable recomendada. El código también reconoce `GOOGLE_API_KEY`. `GEMINI_MODEL` es opcional; si se omite, se usa `gemini-3.6-flash`. La disponibilidad de modelos puede cambiar y debe verificarse con la cuenta de Google utilizada.
 
-Para Vercel, configura `RAG_BACKEND_URL` en las variables de entorno del proyecto. Debe ser el origen HTTPS del backend, sin `/api/chat` ni una barra final. La clave Gemini solo se configura en el servicio del backend, nunca en Vercel ni en el frontend.
+Para Vercel, configura `GEMINI_API_KEY` como variable secreta del proyecto y, si hace falta, `GEMINI_MODEL`. El archivo `.env` local no se sube ni sustituye las variables del entorno de Vercel.
 
 ## Ejecución
 
@@ -203,16 +201,9 @@ La respuesta incluye `resumen`, `diagnostico`, `pasos`, `solucion_recomendada`, 
 
 ## Despliegue
 
-El backend RAG importa PyTorch, Transformers, SciPy y FAISS, por lo que supera el límite estándar de 500 MB de Vercel Functions. Vercel aloja únicamente el frontend y reenvía las peticiones al backend, que debe ejecutarse en Render, Railway, Cloud Run u otro servicio Python con memoria suficiente.
+La Function importa PyTorch, Transformers, SciPy y FAISS. El build del commit `5134adc` reportó 6067 MB; el log confirma que instaló el `requirements.txt` antiguo, pero no ofrece desglose por paquete. El manifiesto runtime ahora excluye Ragas, pandas, LangChain Google y ReportLab (evaluación/no usados) y fija PyTorch a CPU. El wheel Linux/Python 3.12 de esa variante pesa 196,3 MB comprimido y contiene 682,4 MB descomprimidos, antes de sumar las demás dependencias; por eso superar el límite estándar de 500 MB sigue siendo posible.
 
-En el servicio del backend:
-
-- Instala `requirements-backend.txt`.
-- Usa `gunicorn --bind 0.0.0.0:$PORT web_app:app` como comando de inicio.
-- Configura `GEMINI_API_KEY`; el servicio debe proporcionar `PORT`.
-- Conserva `data/manuales/` y `data/vector_db/` junto al código del backend.
-
-En Vercel, configura el Framework Preset como **Other** (también se declara como `"framework": null` en `vercel.json`), establece `RAG_BACKEND_URL` con el origen HTTPS del backend y vuelve a desplegar. `vercel.json` reescribe `POST /api/chat` al servicio externo; `.vercelignore` excluye del despliegue el entorno virtual, el código Python del RAG, los manuales y el índice. Los manuales son necesarios para reconstruir FAISS y el índice persistido permite iniciar sin reprocesarlos; ambos deben permanecer disponibles en el backend externo. El endpoint no tiene autenticación, así que debe protegerse contra uso no autorizado antes de exponerlo públicamente.
+En Vercel, usa el preset Flask y la raíz del repositorio. `app.py` es el entrypoint convencional. Configura `GEMINI_API_KEY` en el panel como secreto. Para conservar embeddings locales, habilita **Large Functions** para el proyecto si está disponible: establece `VERCEL_SUPPORT_LARGE_FUNCTIONS=1` y asegúrate de que Fluid Compute esté habilitado. Vercel documenta hasta 5 GB para esta modalidad; el build original de 6067 MB también supera ese máximo, así que el siguiente build debe confirmar que el wheel CPU y la separación de evaluación reducen el bundle lo suficiente. `.vercelignore` conserva `src/`, `web_app.py`, los manuales y `data/vector_db/`, necesarios para ejecutar el RAG; excluye el entorno local, el script/dataset de evaluación y documentación no necesaria. No elimines recursos de producción para ocultar el tamaño. El endpoint no tiene autenticación, así que considera ese riesgo antes de exponerlo públicamente.
 
 Con el proyecto enlazado al CLI de Vercel, publica producción con:
 
@@ -220,7 +211,7 @@ Con el proyecto enlazado al CLI de Vercel, publica producción con:
 vercel --prod
 ```
 
-Esta configuración no implica que el backend externo ya esté desplegado ni que Vercel haya completado una publicación remota.
+Este comando inicia el despliegue, pero no confirma por sí mismo que la compilación remota haya terminado correctamente.
 
 ## Privacidad y seguridad
 
@@ -233,7 +224,7 @@ Esta configuración no implica que el backend externo ya esté desplegado ni que
 
 El repositorio incluye `data/eval_dataset.json` con 15 preguntas y `scripts/evaluate_rag.py`, que propone medir `faithfulness`, `answer_relevancy`, `context_precision` y `context_recall` con Ragas. El script es experimental y contiene configuración de un modelo evaluador antiguo (`gemini-1.5-flash`); debe actualizarse y validarse antes de usarlo. No se publican métricas verificadas en este repositorio.
 
-El chat y la recuperación local están implementados. Vercel está configurado como frontend/proxy, pero el despliegue requiere alojar el backend externo y definir `RAG_BACKEND_URL`. La evaluación cuantitativa y la autenticación siguen pendientes.
+El chat y la recuperación local están implementados. La app está configurada para ejecutar Flask y el RAG en Vercel; falta habilitar Large Functions si el proyecto es elegible y confirmar el tamaño final con un build remoto. La evaluación cuantitativa y la autenticación siguen pendientes.
 
 ## Aprendizajes técnicos
 

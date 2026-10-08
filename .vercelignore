@@ -1,4 +1,4 @@
-# Vercel only needs the static interface and its routing configuration.
+# Exclude local-only, documentation, and evaluation files from the function bundle.
 /.env*
 /.venv/
 /.agents/
@@ -6,13 +6,9 @@
 /MEMORY.md
 /README.md
 /docs/
-/data/
 /scripts/
-/src/
 /main.py
-/web_app.py
-/requirements-backend.txt
-/requirements-eval.txt
+/data/eval_dataset.json
 /skills-lock.json
 __pycache__/
 *.py[cod]
