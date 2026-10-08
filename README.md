@@ -1,128 +1,125 @@
-# Switch Care: Asistente de Soporte para Nintendo Switch 2
+# Switch Care
 
-## Autores
+Asistente conversacional de soporte para Nintendo Switch 2. Busca información en manuales PDF locales y, cuando hay una clave configurada, usa Gemini para responder con pasos y referencias al documento consultado.
 
-- Julian Arley Ruiz Gonzalez
-- Luna Anahy Chaparro Bustos
+**Estado:** prototipo académico funcional, en desarrollo.
 
-Este proyecto es una propuesta académica de asistente experto para orientar incidencias de Nintendo Switch 2. Está diseñado para responder preguntas sobre encendido, carga, conexión, juegos, controles, temperatura, seguridad y buenas prácticas de soporte.
+**Autores del proyecto:** Julian Arley Ruiz Gonzalez y Luna Anahy Chaparro Bustos.
 
-La solución combina:
+## Propósito
 
-- System prompts para definir rol, reglas y comportamiento del asistente.
-- Few-shot prompting para mostrar ejemplos de respuesta en formato estructurado.
-- Delimitadores XML para separar instrucciones, contexto de conocimiento y pregunta del usuario.
-- Recuperación de contexto (RAG simple) sobre un manual técnico local.
-- Formato de salida JSON para que la respuesta sea consistente y fácil de integrar.
+Los manuales de soporte contienen información repartida entre varios documentos y secciones. Switch Care permite consultar esa información en lenguaje natural, recuperar fragmentos relevantes y recibir una respuesta breve que conserva las referencias al manual. Está dirigido a usuarios de Nintendo Switch 2 que necesitan orientación basada en la documentación disponible, no a sustituir el soporte oficial ni a diagnosticar fallos fuera del corpus.
 
-## Enfoque del proyecto
+## Objetivos
 
-Se trabaja con el enfoque de "Analista de Soporte Técnico". El asistente debe:
+### Objetivo general
 
-- detectar el problema técnico y resumirlo;
-- sugerir diagnósticos o causas probables;
-- proponer pasos de solución ordenados;
-- indicar nivel de prioridad o riesgo;
-- responder en español de forma clara, útil y profesional.
+Construir un asistente web que ayude a localizar y explicar instrucciones de los manuales de Nintendo Switch 2 mediante recuperación aumentada por generación (RAG).
+
+### Objetivos específicos
+
+- Procesar manuales PDF y dividir su texto en fragmentos con solapamiento.
+- Recuperar fragmentos relevantes con embeddings multilingües, FAISS y coincidencia léxica tolerante a tildes.
+- Generar respuestas en el idioma de la consulta, limitadas por la evidencia recuperada y con citas de fuente.
+- Ofrecer una interfaz web con historial conversacional y consultas sugeridas.
+- Mantener una interfaz de consola para probar el asistente sin navegador.
+
+## Tecnologías
+
+| Área | Tecnologías utilizadas |
+|---|---|
+| Interfaz | HTML, CSS y JavaScript; diseño adaptable sin framework de frontend |
+| Backend y API | Python 3.13 en el entorno de desarrollo actual, Flask y Google Gen AI SDK |
+| RAG y búsqueda | Sentence Transformers, `paraphrase-multilingual-MiniLM-L12-v2`, FAISS CPU y búsqueda léxica normalizada |
+| Documentos | `pypdf` para extraer texto de PDF |
+| Configuración | `python-dotenv` y variables de entorno |
+| Evaluación | Ragas y un dataset local de 15 preguntas; el script de evaluación aún requiere actualización del modelo evaluador |
+
+Gemini se configura con `gemini-3.6-flash` como modelo principal y `gemini-3.5-flash` / `gemini-3.5-flash-lite` como respaldos predeterminados. Los nombres y la disponibilidad dependen de la API y de la cuenta utilizada.
+
+## Arquitectura implementada
+
+La aplicación sigue una arquitectura cliente-servidor modular. Flask sirve el frontend y expone el endpoint de chat. El asistente coordina la recuperación y la generación; la carga de documentos, división de texto e índice vectorial están separados en módulos. La extracción, los embeddings y la búsqueda se ejecutan localmente. Si se configura Gemini, solo se envían la pregunta, el historial recibido y los fragmentos recuperados, no el corpus completo.
+
+```mermaid
+flowchart LR
+    U[Usuario] -->|Navega y consulta| F[Frontend HTML, CSS y JavaScript]
+    F -->|POST /api/chat| W[Flask]
+    W --> A[SupportAssistant]
+    A -->|Consulta| V[VectorStore]
+    P[PDF locales] --> L[loaders.py]
+    L --> S[splitters.py]
+    S --> E[Sentence Transformers]
+    E --> X[(Índice FAISS y metadatos)]
+    V --> X
+    X -->|Cinco fragmentos relevantes| A
+    A -->|Pregunta, historial y contexto recuperado| G[API de Gemini]
+    G -->|Respuesta JSON| A
+    A -->|Respuesta y fuentes| F
+```
+
+El índice se persiste en `data/vector_db/`. Los fragmentos se generan con un tamaño de 300 palabras y un solapamiento de 50 palabras. La recuperación del asistente selecciona cinco fragmentos; el código de evaluación consulta tres.
+
+## Funcionalidades
+
+- Responder preguntas sobre los manuales PDF incluidos en `data/manuales/`.
+- Tolerar tildes omitidas y algunas variaciones ortográficas al buscar términos.
+- Entregar un resumen, diagnóstico, pasos, solución recomendada y nivel de confianza en JSON.
+- Mostrar el nombre del documento y el índice del fragmento como fuente.
+- Incluir el historial que envía la interfaz para interpretar preguntas de seguimiento.
+- Usar modelos Gemini alternativos cuando una llamada o una salida estructurada falla.
+- Funcionar sin clave de API en modo de demostración; en ese modo no genera una respuesta real del modelo.
+
+El corpus actual contiene 10 manuales PDF europeos de Nintendo Switch 2, incluidos los documentos de cámara, adaptador de corriente, Joy-Con, dock y mandos.
 
 ## Estructura del proyecto
 
 ```text
-analista-soporte-tecnico/
-├── README.md
-├── requirements.txt
-├── .env.example
-├── .gitignore
-├── main.py
-├── web_app.py
-├── index.html
+.
 ├── data/
-│   └── manuales/
-│       └── manual_soporte_it.txt
+│   ├── eval_dataset.json
+│   ├── manuales/                 # Manuales PDF incluidos
+│   └── vector_db/                # Índice FAISS y metadatos persistidos
+├── scripts/
+│   └── evaluate_rag.py           # Evaluación Ragas en desarrollo
 ├── src/
-│   ├── __init__.py
-│   ├── config.py
-│   ├── knowledge.py
-│   ├── prompt_templates.py
-│   └── assistant.py
+│   ├── assistant.py              # Coordinación de recuperación y respuesta
+│   ├── config.py                 # Rutas, clave y modelos Gemini
+│   ├── loaders.py                # Extracción PDF/TXT
+│   ├── prompt_templates.py       # Instrucciones y plantilla de consulta
+│   ├── splitters.py              # División de texto
+│   └── vector_store.py           # Embeddings, FAISS y recuperación
+├── .env.example
+├── index.html                    # Interfaz del chat
+├── main.py                       # Ejecución en consola
+├── web_app.py                    # Aplicación Flask y API
+├── requirements.txt
+└── README.md
 ```
 
-## Cómo funciona
+## Requisitos previos
 
-### 1. System Prompt
+- Python 3.13 (versión del entorno de desarrollo comprobado).
+- `pip` y conexión a internet para instalar dependencias y descargar el modelo de embeddings en el primer uso.
+- Una clave de Google Gemini para generar respuestas con un modelo remoto. Sin ella solo está disponible el modo de demostración.
 
-El modelo recibe instrucciones del sistema que definen su identidad y comportamiento:
+## Instalación
 
-- eres un analista de soporte técnico senior;
-- respondes en español;
-- usas solo el contexto disponible;
-- si no hay contexto suficiente, lo indicas claramente;
-- entregas una salida estructurada en JSON.
-
-### 2. Few-Shot Prompting
-
-Se incluyen varios ejemplos de preguntas y respuestas esperadas para enseñar el formato de salida:
-
-```json
-{
-  "resumen": "El usuario reporta que el equipo no enciende.",
-  "diagnostico": "Puede haber fallo de alimentación o consumo inicial.",
-  "pasos": [
-    "Verificar el cable de energía.",
-    "Comprobar si el botón de encendido funciona.",
-    "Probar otra toma eléctrica."
-  ],
-  "solucion_recomendada": "Revisar fuente de alimentación y cable.",
-  "nivel_confianza": "alta"
-}
-```
-
-### 3. Delimitadores
-
-Las instrucciones y el contexto se separan con etiquetas XML para reducir ambigüedad:
-
-```xml
-<instrucciones>
-... reglas del asistente ...
-</instrucciones>
-
-<contexto>
-... fragmentos del manual ...
-</contexto>
-
-<pregunta>
-... pregunta del usuario ...
-</pregunta>
-```
-
-### 4. RAG simple
-
-El sistema busca fragmentos relevantes dentro del manual técnico local y los incorpora al prompt antes de pedir la respuesta final.
-
-## Configuración
-
-El repositorio no incluye ninguna clave privada. Crea un archivo `.env` local a
-partir de `.env.example` y agrega tu propia clave de Gemini:
-
-```env
-GEMINI_API_KEY=tu_clave
-GEMINI_MODEL=gemini-3.6-flash
-```
-
-No publiques `.env`, no compartas la clave por capturas y revoca cualquier clave
-que haya quedado expuesta. El archivo `.gitignore` ya excluye `.env`.
-
-## Instalación desde Git Bash
-
-Clona el repositorio y entra en la carpeta del proyecto:
+Clona el repositorio y entra en la carpeta:
 
 ```bash
 git clone https://github.com/Ruzkyy/Soporte_nintendo_proyecto.git
 cd Soporte_nintendo_proyecto
 ```
 
-Crea o activa el entorno virtual. Si el repositorio ya incluye un entorno local
-en tu equipo, actívalo; de lo contrario, créalo:
+Crea y activa un entorno virtual. En PowerShell:
+
+```powershell
+python -m venv .venv
+.\.venv\Scripts\Activate.ps1
+```
+
+En Git Bash:
 
 ```bash
 python -m venv .venv
@@ -132,95 +129,87 @@ source .venv/Scripts/activate
 Instala las dependencias:
 
 ```bash
-pip install -r requirements.txt
+python -m pip install -r requirements.txt
 ```
 
-## Configuración de la API
+## Variables de entorno
 
-Copia el archivo de ejemplo y edítalo con tu clave personal:
-
-```bash
-cp .env.example .env
-```
-
-El archivo `.env` debe contener:
+Copia `.env.example` como `.env` y configura tu clave localmente. No publiques ese archivo ni compartas sus valores.
 
 ```env
-GEMINI_API_KEY=tu_clave_de_gemini
-GEMINI_MODEL=gemini-3.6-flash
+GEMINI_API_KEY=
+GEMINI_MODEL=
 ```
 
-No subas `.env` a GitHub ni compartas su contenido. `.gitignore` ya excluye
-ese archivo. Si no configuras la clave, el programa funciona en modo
-demostración y muestra el contexto local recuperado.
+`GEMINI_API_KEY` es la variable recomendada. El código también reconoce `GOOGLE_API_KEY`. `GEMINI_MODEL` es opcional; si se omite, se usa `gemini-3.6-flash`. La disponibilidad de modelos puede cambiar y debe verificarse con la cuenta de Google utilizada.
 
-## Ejecución en consola
+## Ejecución
 
-```bash
-python main.py
-```
-
-Escribe una consulta y presiona Enter. Para terminar, escribe `salir`.
-
-Ejemplo de pregunta:
-
-```text
-Pregunta> Mi Nintendo Switch 2 no enciende
-```
-
-## Ejecución de la interfaz web
-
-Con el entorno virtual activo, ejecuta:
+### Interfaz web
 
 ```bash
 python web_app.py
 ```
 
-Después abre `http://127.0.0.1:5000` en el navegador. La interfaz envía las
-preguntas al endpoint `/api/chat`.
+Abre <http://127.0.0.1:5000>. El índice local se crea al iniciar por primera vez si todavía no existen los archivos persistidos. La descarga inicial del modelo de embeddings puede tardar.
 
-Ejemplo de interacción:
+### Consola
 
-```text
-Pregunta> Mi PC se reinicia sola al abrir la aplicación de edición
+```bash
+python main.py
 ```
 
-## Salida esperada
+Escribe una consulta en el prompt. Para salir, introduce `salir`, `exit` o `finalizar`.
 
-El asistente responde con un JSON estructurado:
+## API
+
+La aplicación ofrece una ruta para la interfaz y un endpoint JSON de chat:
+
+| Método | Ruta | Descripción | Autenticación |
+|---|---|---|---|
+| `GET` | `/` | Sirve `index.html` | No |
+| `POST` | `/api/chat` | Responde una consulta usando el historial opcional | No |
+
+Ejemplo de petición:
+
+```http
+POST /api/chat
+Content-Type: application/json
+```
 
 ```json
 {
-  "resumen": "El problema se presenta durante la apertura de una aplicación de edición.",
-  "diagnostico": "Podría tratarse de un problema de temperatura, memoria o driver gráfico.",
-  "pasos": [
-    "Verificar temperatura del equipo.",
-    "Revisar drivers del GPU.",
-    "Comprobar uso de memoria RAM."
-  ],
-  "solucion_recomendada": "Actualizar controladores y validar que no haya sobrecalentamiento.",
-  "nivel_confianza": "media"
+  "question": "¿Cómo conecto la cámara?",
+  "history": []
 }
 ```
 
-## Flujo de procesamiento
+La respuesta incluye `resumen`, `diagnostico`, `pasos`, `solucion_recomendada`, `nivel_confianza` y `fuentes`. La aplicación no implementa autenticación; Flask se configura para escuchar en `127.0.0.1` y debe tratarse como un servidor de desarrollo local.
 
-1. `src/config.py` carga las variables de `.env`.
-2. `src/knowledge.py` lee el manual local y recupera los fragmentos relevantes.
-3. `src/prompt_templates.py` construye el prompt con reglas, ejemplos y etiquetas XML.
-4. `src/assistant.py` envía la pregunta y el contexto al modelo configurado.
-5. La respuesta se limpia y se entrega en formato JSON.
+## Privacidad y seguridad
 
-## Objetivo del proyecto
+- Los manuales incluidos se leen y procesan localmente; el sistema no envía el corpus completo al modelo.
+- Si hay una clave Gemini, se envían a la API la pregunta, el historial proporcionado y los fragmentos recuperados para generar la respuesta.
+- Guarda las claves únicamente en `.env`. No incluyas secretos en el repositorio, capturas ni reportes.
+- No uses el servidor de desarrollo de Flask como despliegue público ni para datos sensibles: esta versión no incluye autenticación.
 
-Este repositorio implementa el avance de diseño de prompts y un prototipo RAG
-para soporte técnico. Define las instrucciones del sistema, integra ejemplos de
-respuesta, utiliza delimitadores XML y recupera información desde un manual
-local.
+## Evaluación y estado
 
-## Privacidad y alcance
+El repositorio incluye `data/eval_dataset.json` con 15 preguntas y `scripts/evaluate_rag.py`, que propone medir `faithfulness`, `answer_relevancy`, `context_precision` y `context_recall` con Ragas. El script es experimental y contiene configuración de un modelo evaluador antiguo (`gemini-1.5-flash`); debe actualizarse y validarse antes de usarlo. No se publican métricas verificadas en este repositorio.
 
-El manual y la recuperación de información se procesan localmente. Si se
-configura `GEMINI_API_KEY`, la pregunta y los fragmentos recuperados se envían
-a la API de Gemini. Para un funcionamiento completamente local sería necesario
-sustituir ese cliente por un modelo instalado en el equipo.
+El chat y la recuperación local están implementados. La evaluación cuantitativa y una configuración de despliegue seguro siguen pendientes.
+
+## Aprendizajes técnicos
+
+- La recuperación combina similitud vectorial con coincidencia léxica normalizada para mejorar consultas en español con tildes omitidas o variaciones sencillas.
+- Los fragmentos recuperados conservan metadatos de documento y posición para devolver fuentes visibles.
+- La salida estructurada facilita la integración con la interfaz; las respuestas incompletas activan el siguiente modelo disponible.
+
+## Autores
+
+- Julian Arley Ruiz Gonzalez
+- Luna Anahy Chaparro Bustos
+
+## Autor
+
+**Ruzky**

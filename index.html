@@ -6,20 +6,20 @@
   <meta name="description" content="Asesoría técnica asistida por IA para Nintendo Switch 2.">
   <title>Switch Care | Soporte Nintendo Switch 2</title>
   <style>
-    @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Barlow+Condensed:wght@500;600;700&display=swap');
 
     :root {
-      --ink: #20232b;
-      --muted: #70747f;
-      --line: #e3e4e9;
-      --paper: #f7f7f9;
+      --ink: #25272c;
+      --muted: #626a73;
+      --line: #d9dee3;
+      --paper: #f2f4f6;
       --surface: #ffffff;
       --teal: #e60012;
-      --teal-dark: #b4000e;
-      --mint: #ffe2e5;
-      --coral: #0879c9;
-      --yellow: #f6c945;
-      --shadow: 0 20px 50px rgba(34, 35, 45, .12);
+      --teal-dark: #bd0010;
+      --mint: #e4f8fc;
+      --coral: #00b8e4;
+      --yellow: #f4c84a;
+      --shadow: 0 18px 44px rgba(37, 39, 44, .14);
     }
 
     * { box-sizing: border-box; }
@@ -178,6 +178,216 @@
       .face-buttons { left: 9px; transform: scale(.72); transform-origin: left top; }
       .composer-box { padding: 8px 6px; }
     }
+
+    body { font-family: 'Atkinson Hyperlegible', sans-serif; background: var(--paper); }
+    .app-shell {
+      grid-template-columns: 248px minmax(0, 1fr);
+      background: radial-gradient(circle at 88% 7%, rgba(0, 184, 228, .08), transparent 22rem), var(--paper);
+    }
+    .sidebar { gap: 28px; padding: 26px 20px; background: var(--ink); }
+    .brand { gap: 12px; }
+    .brand-mark {
+      overflow: hidden; color: white; border-radius: 13px;
+      background: linear-gradient(90deg, #e60012 0 50%, #00b8e4 50%);
+      font: 700 16px 'Barlow Condensed', sans-serif;
+    }
+    .brand strong { font: 700 19px 'Barlow Condensed', sans-serif; letter-spacing: 0; }
+    .brand span { color: #c0c6cc; font-size: 12px; }
+    .new-chat {
+      gap: 10px; padding: 12px 13px; border: 1px solid #e60012; border-radius: 8px;
+      background: #e60012; font-weight: 700;
+    }
+    .new-chat:hover { background: #bd0010; }
+    .sidebar-label { color: #c0c6cc; font-size: 12px; letter-spacing: 0; text-transform: none; }
+    .history { display: grid; gap: 5px; }
+    .history button {
+      padding: 10px 9px; border-left: 2px solid transparent; border-radius: 0 6px 6px 0;
+      color: #e1e5e9; font: 400 13px 'Atkinson Hyperlegible', sans-serif;
+    }
+    .history button:hover, .history button.active { border-left-color: #00b8e4; background: rgba(255,255,255,.08); }
+    .sidebar-footer { color: #c0c6cc; }
+    .main { min-height: 100vh; }
+    .topbar { padding: 27px clamp(22px, 4vw, 58px) 16px; }
+    .eyebrow { color: #bd0010; font-size: 13px; font-weight: 700; letter-spacing: 0; text-transform: none; }
+    h1 { font: 600 clamp(26px, 3vw, 36px) 'Barlow Condensed', sans-serif; letter-spacing: 0; }
+    .header-badge { padding: 8px 11px; border-radius: 7px; color: var(--ink); background: white; }
+    .chat-wrap {
+      width: min(1080px, calc(100% - 48px)); height: calc(100svh - 176px); min-height: 540px;
+      margin: 4px auto 28px; padding: 0; border: 0; border-radius: 0; background: transparent; box-shadow: none;
+    }
+    .chat-wrap::before, .chat-wrap::after { content: none; }
+    .console-frame {
+      display: grid; grid-template-columns: 118px minmax(0, 1fr) 118px; gap: 0;
+      width: 100%; height: 100%; min-height: inherit; padding: 9px; border-radius: 26px;
+      background: var(--ink); box-shadow: 0 14px 34px rgba(37,39,44,.17);
+    }
+    .controller {
+      position: relative; display: block; flex: initial; width: auto; min-width: 0; min-height: 0;
+      overflow: visible; background: transparent; box-shadow: none;
+    }
+    .controller::after { content: none; }
+    .joycon-shell {
+      position: absolute; top: 0; bottom: 0; z-index: 2; width: 84px;
+      border: 1px solid #191b1f; background: #34373c;
+      box-shadow: inset 3px 0 5px rgba(255,255,255,.07), 2px 7px 12px rgba(0,0,0,.22);
+    }
+    .controller.left .joycon-shell { right: 5px; border-radius: 25px 9px 9px 25px; }
+    .controller.right .joycon-shell { left: 5px; border-radius: 9px 25px 25px 9px; }
+    .joycon-shell::after {
+      content: ''; position: absolute; top: 0; bottom: 0; width: 7px;
+      box-shadow: inset 0 0 2px rgba(0,0,0,.3);
+    }
+    .controller.left .joycon-shell::after { right: 0; border-radius: 0 8px 8px 0; background: #68c8e8; }
+    .controller.right .joycon-shell::after { left: 0; border-radius: 8px 0 0 8px; background: #ed8b7d; }
+    .stick {
+      position: absolute; z-index: 3; width: 31px; height: 31px; border: 3px solid #15171a;
+      border-radius: 50%; background: #3c4045; box-shadow: inset 0 0 0 2px #62676d, 0 2px 3px #15171a;
+    }
+    .controller.left .stick { top: 19%; bottom: auto; left: 50%; transform: translateX(-50%); }
+    .controller.right .stick { top: auto; bottom: 18%; left: 50%; transform: translateX(-50%); }
+    .dpad, .face-buttons {
+      position: absolute; z-index: 3; width: 34px; height: 34px;
+    }
+    .dpad { top: auto; bottom: 18%; left: 50%; transform: translateX(-50%); }
+    .face-buttons { top: 18%; bottom: auto; left: 50%; transform: translateX(-50%); }
+    .dpad i, .face-buttons i {
+      position: absolute; display: grid; place-items: center; width: 13px; height: 13px;
+      border: 1px solid #17191c; border-radius: 50%; color: #92969b; background: #24272b;
+      font: normal 7px 'Atkinson Hyperlegible', sans-serif; line-height: 1;
+    }
+    .dpad i:nth-child(1), .face-buttons i:nth-child(1) { top: 0; left: 10px; }
+    .dpad i:nth-child(2), .face-buttons i:nth-child(2) { top: 10px; left: 0; }
+    .dpad i:nth-child(3), .face-buttons i:nth-child(3) { top: 10px; right: 0; }
+    .dpad i:nth-child(4), .face-buttons i:nth-child(4) { bottom: 0; left: 10px; }
+    .face-buttons i:nth-child(n) { border-color: #17191c; color: #b8bdc2; background: #25282d; }
+    .joycon-symbol {
+      position: absolute; z-index: 3; top: 8%; color: #17191c;
+      font: 700 13px 'Atkinson Hyperlegible', sans-serif;
+    }
+    .controller.left .joycon-symbol { right: 17px; }
+    .controller.right .joycon-symbol { left: 17px; }
+    .joycon-home {
+      position: absolute; z-index: 3; bottom: 8%; left: 50%; width: 10px; height: 10px;
+      transform: translateX(-50%); border: 1px solid #17191c; border-radius: 50%;
+      background: #24272b;
+    }
+    .console-screen {
+      display: flex; flex-direction: column; min-width: 0; min-height: 0; overflow: hidden;
+      padding: 0 22px 16px; border-radius: 15px; background: var(--surface);
+    }
+    .screen-topline {
+      display: flex; align-items: center; justify-content: space-between; gap: 12px;
+      min-height: 43px; border-bottom: 1px solid var(--line); color: var(--muted); font-size: 12px;
+    }
+    .screen-status { display: inline-flex; align-items: center; gap: 7px; color: #3f6553; font-weight: 700; }
+    .intro { grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 22px; padding: 20px 0 17px; }
+    .intro h2 { margin: 0 0 5px; font: 600 23px 'Barlow Condensed', sans-serif; }
+    .intro p { max-width: 580px; font-size: 14px; }
+    .intro-note { max-width: 205px; padding: 9px 11px; border-left-color: var(--coral); color: #245c69; background: #e8f8fb; }
+    .messages {
+      flex: 1; min-height: 0; padding: 17px 6px 20px; gap: 15px;
+      border: 0; border-top: 1px solid var(--line); background: white;
+    }
+    .message { gap: 10px; max-width: 780px; }
+    .avatar { flex-basis: 34px; width: 34px; height: 34px; border-radius: 50%; background: var(--teal); }
+    .user .avatar { color: white; background: #007f9f; }
+    .bubble { padding: 12px 15px; border: 1px solid #e1e5e9; border-radius: 7px; box-shadow: none; }
+    .user .bubble { border-color: #a8e2ef; border-radius: 7px; background: #eaf9fc; }
+    .bubble p { line-height: 1.6; }
+    .answer-title { color: #bd0010; font: 700 16px 'Barlow Condensed', sans-serif; }
+    .answer-list { margin-top: 8px; color: #3d444b; }
+    .confidence { padding: 5px 8px; border-radius: 4px; }
+    .source-list { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 11px; }
+    .source-chip { max-width: 100%; padding: 5px 7px; border: 1px solid var(--line); border-radius: 4px; color: #525c65; background: #f5f7f8; font-size: 11px; overflow-wrap: anywhere; }
+    .suggestions { gap: 7px; padding: 12px 0 13px 44px; }
+    .suggestion { padding: 8px 10px; border: 1px solid #c8d2d8; border-radius: 5px; color: #454c54; background: white; font-size: 12px; }
+    .suggestion:hover { border-color: var(--coral); background: #f0fbfd; }
+    .composer { position: static; padding: 12px 0 0; border-top: 1px solid var(--line); background: white; }
+    .switch-input { min-height: 0; }
+    .composer-box {
+      min-height: 58px; padding: 6px 7px 6px 14px; border: 1px solid #bbc4ca; border-radius: 8px;
+      background: #f5f7f8; box-shadow: none;
+    }
+    textarea { min-height: 42px; padding: 10px 4px; border: 0; outline: 0; background: transparent; }
+    textarea::placeholder { color: #737c84; }
+    textarea:focus-visible { box-shadow: inset 0 -2px 0 var(--coral); }
+    .send { width: 42px; height: 42px; border-radius: 6px; background: var(--teal); }
+    .send:hover { background: var(--teal-dark); }
+    .composer-hint { display: none; }
+    .typing { color: var(--muted); }
+    .typing span { background: var(--teal); }
+    button:focus-visible, textarea:focus-visible { outline: 3px solid #007f9f; outline-offset: 3px; }
+
+    @media (max-width: 900px) {
+      .app-shell { grid-template-columns: 210px minmax(0, 1fr); }
+      .sidebar { padding: 22px 15px; }
+      .chat-wrap { width: calc(100% - 28px); }
+      .console-frame { grid-template-columns: 92px minmax(0, 1fr) 92px; }
+      .joycon-shell { width: 57px; }
+      .controller.left .joycon-shell { right: 3px; }
+      .controller.right .joycon-shell { left: 3px; }
+      .console-screen { padding-right: 16px; padding-left: 16px; }
+    }
+    @media (max-width: 680px) {
+      .app-shell { display: block; }
+      .sidebar { position: sticky; top: 0; z-index: 5; min-height: 68px; padding: 12px 16px; }
+      .brand-mark { width: 38px; height: 38px; }
+      .brand strong { font-size: 17px; }
+      .brand span { font-size: 11px; }
+      .new-chat { width: auto; padding: 10px 11px; }
+      .new-chat span:last-child { display: none; }
+      .history, .sidebar-label, .sidebar-footer { display: none; }
+      .main { height: calc(100svh - 68px); min-height: 0; overflow: hidden; }
+      .topbar { padding: 17px 18px 13px; }
+      .topbar .eyebrow { margin-bottom: 3px; font-size: 12px; }
+      h1 { font-size: 27px; }
+      .header-badge { display: none; }
+      .chat-wrap { width: calc(100% - 18px); height: auto; min-height: 0; margin: 2px auto 12px; }
+      .console-frame { grid-template-columns: 19px minmax(0, 1fr) 19px; gap: 0; padding: 5px; border-radius: 19px; }
+      .joycon-shell { top: 0; bottom: 0; width: 15px; border: 0; border-radius: 9px !important; box-shadow: none; }
+      .joycon-shell::after { width: 5px; }
+      .controller .dpad, .controller .stick, .controller .face-buttons,
+      .controller .joycon-symbol, .controller .joycon-home { display: none; }
+      .controller.left .joycon-shell { right: 0; }
+      .controller.right .joycon-shell { left: 0; }
+      .console-screen { padding: 0 11px 12px; border-radius: 12px; }
+      .screen-topline { min-height: 38px; font-size: 11px; }
+      .intro { display: block; padding: 14px 0 13px; }
+      .intro h2 { font-size: 21px; }
+      .intro p { font-size: 13px; }
+      .intro-note { max-width: none; margin-top: 10px; padding: 7px 9px; font-size: 11px; }
+      .messages { padding: 13px 0 16px; gap: 12px; }
+      .message { gap: 7px; }
+      .avatar { flex-basis: 29px; width: 29px; height: 29px; font-size: 11px; }
+      .bubble { padding: 10px 11px; }
+      .bubble p { font-size: 14px; }
+      .answer-title { font-size: 15px !important; }
+      .answer-list { padding-left: 18px; font-size: 13px; }
+      .suggestions { flex-wrap: nowrap; overflow-x: auto; padding: 10px 0; }
+      .suggestion { flex: 0 0 auto; }
+      .composer { padding-top: 10px; }
+      .composer-box { min-height: 54px; padding: 5px 6px 5px 10px; }
+      textarea { font-size: 14px; }
+    }
+    @media (max-width: 360px) {
+      .brand span { display: none; }
+      .chat-wrap { width: calc(100% - 12px); }
+      .console-frame { grid-template-columns: 14px minmax(0, 1fr) 14px; padding: 4px; }
+      .joycon-shell { width: 11px; }
+      .console-screen { padding-right: 8px; padding-left: 8px; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { scroll-behavior: auto !important; animation-duration: .01ms !important; animation-iteration-count: 1 !important; }
+    }
+    .chat-wrap { display: flex; flex-direction: column; }
+    .console-frame { grid-template-rows: minmax(0, 1fr); flex: 1 1 auto; min-height: 0; }
+    .suggestions { scrollbar-width: none; }
+    .suggestions::-webkit-scrollbar { display: none; }
+    @media (min-width: 681px) {
+      .app-shell { height: 100svh; }
+      .main { height: 100svh; min-height: 0; overflow: hidden; }
+      .chat-wrap { height: auto; min-height: 0; }
+    }
   </style>
 </head>
 <body>
@@ -187,13 +397,14 @@
         <div class="brand-mark">S2</div>
         <div><strong>Switch Care</strong><span>Asesoría para Nintendo Switch 2</span></div>
       </div>
-      <button class="new-chat" id="newChat" type="button"><span aria-hidden="true">＋</span><span>Nueva consulta</span><span aria-hidden="true">↗</span></button>
+      <button class="new-chat" id="newChat" type="button"><span aria-hidden="true">＋</span><span>Nueva consulta</span></button>
       <div>
-        <p class="sidebar-label">Consultas recientes</p>
-        <nav class="history" aria-label="Consultas recientes">
-          <button class="active" type="button">La consola no enciende</button>
-          <button type="button">La consola no carga</button>
-          <button type="button">Problemas con el Wi-Fi</button>
+        <p class="sidebar-label">Consultas frecuentes</p>
+        <nav class="history" aria-label="Consultas frecuentes">
+          <button type="button" data-question="Mi Nintendo Switch 2 no enciende">La consola no enciende</button>
+          <button type="button" data-question="Mi Nintendo Switch 2 no carga">La consola no carga</button>
+          <button type="button" data-question="La conexión Wi-Fi de mi Nintendo Switch 2 se cae">Problemas con el Wi-Fi</button>
+          <button type="button" data-question="¿Cómo conecto la cámara de Nintendo Switch 2?">Conectar la cámara</button>
         </nav>
       </div>
       <div class="sidebar-footer"><span class="status-dot"></span>Manual Switch 2 conectado<br>Respuesta basada en evidencia local</div>
@@ -201,38 +412,41 @@
 
     <main class="main">
       <header class="topbar">
-        <div><p class="eyebrow">Nintendo Switch 2 · En línea</p><h1>¿Qué está pasando con tu consola?</h1></div>
+        <div><p class="eyebrow">Soporte para Nintendo Switch 2</p><h1>¿Qué está pasando con tu consola?</h1></div>
         <div class="header-badge"><span class="status-dot"></span>IA disponible</div>
       </header>
 
       <section class="chat-wrap" aria-label="Chat de asesoría técnica">
-        <div class="intro">
-          <p>Describe el problema con tus propias palabras. Analizaré la base de soporte de Switch 2 y te indicaré qué revisar, paso a paso.</p>
-          <div class="intro-note">No compartas contraseñas<br>ni datos confidenciales.</div>
-        </div>
+        <div class="console-frame">
+          <div class="controller left" aria-hidden="true"><span class="joycon-shell"><span class="stick"></span><span class="dpad"><i>▲</i><i>◀</i><i>▶</i><i>▼</i></span><span class="joycon-symbol">−</span><span class="joycon-home"></span></span></div>
+          <div class="console-screen">
+            <div class="screen-topline"><span>Asistencia técnica</span><span class="screen-status"><span class="status-dot"></span>Manual conectado</span></div>
+            <div class="intro">
+              <div><h2>Cuéntame qué le ocurre</h2><p>Describe el problema; buscaré instrucciones en los manuales de Switch 2.</p></div>
+              <div class="intro-note">No compartas contraseñas ni datos personales.</div>
+            </div>
 
-        <div class="messages" id="messages">
+        <div class="messages" id="messages" aria-live="polite" aria-label="Conversación">
           <article class="message assistant">
             <div class="avatar" aria-hidden="true">IA</div>
             <div class="bubble"><p class="answer-title">Hola, soy tu analista de Switch 2</p><p>Puedo ayudarte con problemas de encendido, carga, Wi-Fi, juegos, controles, audio, temperatura y seguridad. ¿Qué necesitas revisar?</p><p class="message-meta">Switch Care · ahora</p></div>
           </article>
         </div>
 
-        <div class="suggestions" id="suggestions" aria-label="Consultas sugeridas">
-          <button class="suggestion" type="button" data-question="Mi Nintendo Switch 2 no enciende">La consola no enciende</button>
-          <button class="suggestion" type="button" data-question="Mi Nintendo Switch 2 no carga">La consola no carga</button>
-          <button class="suggestion" type="button" data-question="La conexión Wi-Fi de mi Nintendo Switch 2 se cae">El Wi-Fi se cae</button>
-          <button class="suggestion" type="button" data-question="Mi control de Nintendo Switch 2 presenta fallos">Problema con controles</button>
-        </div>
+            <div class="suggestions" id="suggestions" aria-label="Consultas sugeridas">
+              <button class="suggestion" type="button" data-question="¿Cómo conecto la cámara de Nintendo Switch 2?">Conectar cámara</button>
+              <button class="suggestion" type="button" data-question="Mi Nintendo Switch 2 no enciende">No enciende</button>
+              <button class="suggestion" type="button" data-question="La conexión Wi-Fi de mi Nintendo Switch 2 se cae">Falla el Wi-Fi</button>
+            </div>
 
-        <form class="composer" id="chatForm">
-          <div class="switch-input" aria-label="Control de consulta con diseño de Nintendo Switch 2">
-            <div class="controller left" aria-hidden="true"><span class="dpad"></span><span class="stick"></span></div>
-            <div class="composer-box"><textarea id="question" rows="1" placeholder="Escribe el problema de tu consola..." aria-label="Pregunta técnica"></textarea><button class="send" type="submit" aria-label="Enviar consulta" title="Enviar consulta">↑</button></div>
-            <div class="controller right" aria-hidden="true"><span class="stick"></span><span class="face-buttons"><i></i><i></i><i></i><i></i></span></div>
+            <form class="composer" id="chatForm">
+              <div class="switch-input">
+                <div class="composer-box"><textarea id="question" rows="1" placeholder="Escribe tu consulta..." aria-label="Pregunta técnica"></textarea><button class="send" type="submit" aria-label="Enviar consulta" title="Enviar consulta">↑</button></div>
+              </div>
+            </form>
           </div>
-          <p class="composer-hint">Enter para enviar · Shift + Enter para una nueva línea</p>
-        </form>
+          <div class="controller right" aria-hidden="true"><span class="joycon-shell"><span class="stick"></span><span class="face-buttons"><i>X</i><i>Y</i><i>A</i><i>B</i></span><span class="joycon-symbol">+</span><span class="joycon-home"></span></span></div>
+        </div>
       </section>
     </main>
   </div>
@@ -242,6 +456,7 @@
     const form = document.querySelector('#chatForm');
     const input = document.querySelector('#question');
     const suggestions = document.querySelector('#suggestions');
+    const shortcuts = document.querySelector('.history');
     const newChat = document.querySelector('#newChat');
 
     function addMessage(content, type) {
@@ -249,23 +464,37 @@
       article.className = `message ${type}`;
       article.innerHTML = `<div class="avatar" aria-hidden="true">${type === 'user' ? 'TÚ' : 'IA'}</div><div class="bubble">${content}<p class="message-meta">${type === 'user' ? 'Tú' : 'Switch Care'} · ahora</p></div>`;
       messages.appendChild(article);
-      article.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      messages.scrollTo({ top: messages.scrollHeight, behavior: 'smooth' });
     }
 
     function escapeHtml(value) {
       return value.replace(/[&<>]/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[char]));
     }
 
+    let chatHistory = [];
+
     function formatAnswer(result) {
       const steps = Array.isArray(result.pasos) ? result.pasos : [];
       const stepsHtml = steps.length ? `<ol class="answer-list">${steps.map(step => `<li>${escapeHtml(String(step))}</li>`).join('')}</ol>` : '';
-      return `<p class="answer-title">${escapeHtml(result.resumen || 'Resultado del análisis')}</p><p>${escapeHtml(result.diagnostico || '')}</p>${stepsHtml}<p>${escapeHtml(result.solucion_recomendada || '')}</p><span class="confidence">Confianza ${escapeHtml(result.nivel_confianza || 'baja')}</span>`;
+      
+      const sources = Array.isArray(result.fuentes) && result.fuentes.length > 0
+        ? `<div class="source-list">${result.fuentes.map(f => `<span class="source-chip">${escapeHtml(f)}</span>`).join('')}</div>`
+        : '';
+
+      return `<p class="answer-title">${escapeHtml(result.resumen || 'Resultado del análisis')}</p><p>${escapeHtml(result.diagnostico || '')}</p>${stepsHtml}<p>${escapeHtml(result.solucion_recomendada || '')}</p><div><span class="confidence">Confianza ${escapeHtml(result.nivel_confianza || 'baja')}</span></div>${sources}`;
     }
 
     async function sendQuestion(question) {
       const clean = question.trim();
       if (!clean) return;
+      
       addMessage(`<p>${escapeHtml(clean)}</p>`, 'user');
+      
+      const payload = { question: clean, history: chatHistory };
+      
+      // Update history state
+      chatHistory.push({ role: 'user', content: clean });
+      
       input.value = '';
       input.style.height = 'auto';
       const loading = document.createElement('article');
@@ -276,12 +505,16 @@
         const response = await fetch('/api/chat', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ question: clean })
+          body: JSON.stringify(payload)
         });
         const result = await response.json();
         if (!response.ok) throw new Error(result.error || 'No se pudo procesar la consulta.');
         loading.remove();
         addMessage(formatAnswer(result), 'assistant');
+        
+        // Update history state with assistant response
+        chatHistory.push({ role: 'assistant', content: JSON.stringify(result) });
+        
       } catch (error) {
         loading.remove();
         addMessage(`<p class="answer-title">No se pudo conectar con el asistente</p><p>${escapeHtml(error.message)}</p><span class="confidence">Servicio no disponible</span>`, 'assistant');
@@ -292,7 +525,12 @@
     input.addEventListener('keydown', event => { if (event.key === 'Enter' && !event.shiftKey) { event.preventDefault(); form.requestSubmit(); } });
     input.addEventListener('input', () => { input.style.height = 'auto'; input.style.height = `${Math.min(input.scrollHeight, 120)}px`; });
     suggestions.addEventListener('click', event => { const button = event.target.closest('[data-question]'); if (button) sendQuestion(button.dataset.question); });
-    newChat.addEventListener('click', () => { messages.innerHTML = '<article class="message assistant"><div class="avatar">IA</div><div class="bubble"><p class="answer-title">Nueva consulta</p><p>Cuéntame qué problema presenta tu Nintendo Switch 2.</p><p class="message-meta">Switch Care · ahora</p></div></article>'; input.focus(); });
+    shortcuts.addEventListener('click', event => { const button = event.target.closest('[data-question]'); if (button) sendQuestion(button.dataset.question); });
+    newChat.addEventListener('click', () => { 
+        chatHistory = []; // Reset history
+        messages.innerHTML = '<article class="message assistant"><div class="avatar">IA</div><div class="bubble"><p class="answer-title">Nueva consulta</p><p>Cuéntame qué problema presenta tu Nintendo Switch 2.</p><p class="message-meta">Switch Care · ahora</p></div></article>'; 
+        input.focus(); 
+    });
   </script>
 </body>
 </html>

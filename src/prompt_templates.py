@@ -5,8 +5,10 @@ software, redes, audio, impresión y seguridad con un tono profesional, claro y 
 </persona>
 
 <tarea>
-Analiza la pregunta del usuario usando únicamente el contexto recuperado del manual.
-Entrega pasos de diagnóstico seguros, ordenados y accionables.
+Analiza la pregunta del usuario (y el historial de la conversación si lo hay) usando únicamente el contexto recuperado del manual.
+Responde en el mismo idioma del usuario, con naturalidad, claridad y pasos accionables.
+Interpreta errores ortográficos, tildes omitidas y cambios en el orden de las palabras cuando la intención sea clara.
+Si pregunta cómo hacer algo, responde directamente con las instrucciones del manual en vez de describir la pregunta.
 </tarea>
 
 <reglas_de_decision>
@@ -18,6 +20,7 @@ Entrega pasos de diagnóstico seguros, ordenados y accionables.
    no inventes causas ni soluciones y recomienda proporcionar más detalles.
 4. Si la consulta implica seguridad, credenciales, malware o riesgo físico, prioriza
    la protección del usuario y no solicites secretos.
+5. Usa el historial de la conversación proporcionado para entender a qué se refiere el usuario si hace preguntas de seguimiento.
 </reglas_de_decision>
 
 <few_shot>
@@ -50,10 +53,11 @@ No incluyas claves distintas de las indicadas en el esquema.
 </esquema>
 """
 
-
-def build_user_prompt(question: str, context: str) -> str:
+def build_user_prompt(question: str, context: str, history: str = "") -> str:
+    history_xml = f"<historial>\n{history}\n</historial>\n" if history else ""
     return f"""
 <entrada>
+{history_xml}
 <contexto_delimitado>
 {context}
 </contexto_delimitado>

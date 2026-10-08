@@ -19,12 +19,13 @@ def index():
 def chat():
     payload = request.get_json(silent=True) or {}
     question = payload.get("question", "")
+    history = payload.get("history", [])
 
     if not isinstance(question, str):
         return jsonify({"error": "La pregunta debe ser texto."}), 400
 
     try:
-        return jsonify(assistant.answer(question))
+        return jsonify(assistant.answer(question, history=history))
     except Exception:
         app.logger.exception("Error al procesar la consulta")
         return jsonify({"error": "No se pudo procesar la consulta."}), 500

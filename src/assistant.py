@@ -1,17 +1,42 @@
 import json
-from typing import Any
+from typing import Any, List, Dict
 
 from google import genai
 from google.genai import types
 
 from src.config import settings
-from src.knowledge import load_manuals, retrieve_context
+from src.vector_store import VectorStore
 from src.prompt_templates import SYSTEM_PROMPT, build_user_prompt
+
+
+RESPONSE_SCHEMA = {
+    "type": "OBJECT",
+    "properties": {
+        "resumen": {"type": "STRING"},
+        "diagnostico": {"type": "STRING"},
+        "pasos": {"type": "ARRAY", "items": {"type": "STRING"}},
+        "solucion_recomendada": {"type": "STRING"},
+        "nivel_confianza": {
+            "type": "STRING",
+            "enum": ["alta", "media", "baja"],
+        },
+    },
+    "required": [
+        "resumen",
+        "diagnostico",
+        "pasos",
+        "solucion_recomendada",
+        "nivel_confianza",
+    ],
+}
 
 
 class SupportAssistant:
     def __init__(self):
-        self.documents = load_manuals(settings.KNOWLEDGE_DIR)
+        self.vector_store = VectorStore(
+            persist_dir=settings.VECTOR_DB_DIR, 
+            data_dir=settings.KNOWLEDGE_DIR
+        )
         self.client = None
         if settings.API_KEY:
             self.client = genai.Client(api_key=settings.API_KEY)
@@ -21,15 +46,29 @@ class SupportAssistant:
         if cleaned.startswith("```"):
             cleaned = cleaned.replace("```json", "").replace("```", "").strip()
         try:
-            return json.loads(cleaned)
+            parsed = json.loads(cleaned)
         except json.JSONDecodeError:
-            return {
-                "resumen": cleaned[:200],
-                "diagnostico": "La respuesta no llegó en formato JSON válido.",
-                "pasos": [],
-                "solucion_recomendada": "Solicita la respuesta nuevamente con una pregunta más específica.",
-                "nivel_confianza": "baja",
+            start = cleaned.find("{")
+            if start < 0:
+                parsed = None
+            else:
+                try:
+                    parsed, _ = json.JSONDecoder().raw_decode(cleaned[start:])
+                except json.JSONDecodeError:
+                    parsed = None
+
+        if isinstance(parsed, dict):
+            required_fields = {
+                "resumen",
+                "diagnostico",
+                "pasos",
+                "solucion_recomendada",
+                "nivel_confianza",
             }
+            if required_fields.issubset(parsed) and isinstance(parsed["pasos"], list):
+                return parsed
+
+        raise ValueError("El modelo devolvió una respuesta incompleta o con formato JSON inválido.")
 
     def _fallback_response(self, question: str, context: str) -> dict[str, Any]:
         return {
@@ -45,7 +84,17 @@ class SupportAssistant:
             "contexto_utilizado": context,
         }
 
-    def answer(self, question: str) -> dict[str, Any]:
+    def format_history(self, history: List[Dict[str, str]]) -> str:
+        if not history:
+            return ""
+        formatted = []
+        for msg in history:
+            role = "Usuario" if msg.get("role") == "user" else "Asistente"
+            content = msg.get("content", "")
+            formatted.append(f"{role}: {content}")
+        return "\n".join(formatted)
+
+    def answer(self, question: str, history: List[Dict[str, str]] = None) -> dict[str, Any]:
         if not question or not question.strip():
             return {
                 "resumen": "La pregunta está vacía.",
@@ -53,34 +102,74 @@ class SupportAssistant:
                 "pasos": [],
                 "solucion_recomendada": "Escribe el problema técnico con detalles del equipo, error y contexto.",
                 "nivel_confianza": "baja",
+                "fuentes": []
             }
 
-        context = retrieve_context(question, self.documents, limit=3)
-        prompt = build_user_prompt(question, context)
+        # 1. Recuperar contexto de la base de datos vectorial FAISS
+        retrieved_items = self.vector_store.retrieve(question, top_k=5)
+        
+        context_blocks = []
+        fuentes = []
+        for item in retrieved_items:
+            source = item["metadata"]["source"]
+            chunk_index = item["metadata"]["chunk_index"]
+            text = item["chunk"]
+            context_blocks.append(f"Fuente: {source} (fragmento {chunk_index})\n{text}")
+            
+            # Guardar fuentes para la UI
+            fuente_str = f"{source} (frag. {chunk_index})"
+            if fuente_str not in fuentes:
+                fuentes.append(fuente_str)
+
+        context_str = "\n\n---\n\n".join(context_blocks) if context_blocks else "No hay contexto disponible en la base de conocimientos local."
+        
+        # 2. Formatear historial
+        history_str = self.format_history(history)
+
+        # 3. Construir prompt
+        prompt = build_user_prompt(question, context_str, history_str)
 
         if not self.client:
-            return self._fallback_response(question, context)
+            resp = self._fallback_response(question, context_str)
+            resp["fuentes"] = fuentes
+            return resp
 
-        try:
-            response = self.client.models.generate_content(
-                model=settings.MODEL,
-                config=types.GenerateContentConfig(
-                    system_instruction=SYSTEM_PROMPT,
-                    temperature=0.2,
-                    max_output_tokens=1024,
-                ),
-                contents=prompt,
-            )
-            return self._clean_json_response(response.text)
-        except Exception as exc:
-            return {
-                "resumen": f"No se pudo completar la respuesta para: {question}",
-                "diagnostico": str(exc),
-                "pasos": [
-                    "Verifica la API key de Gemini.",
-                    "Asegúrate de que el modelo exista en tu cuenta.",
-                    "Reintenta la consulta con una pregunta más específica."
-                ],
-                "solucion_recomendada": "Revisa la configuración de acceso y la disponibilidad del modelo.",
-                "nivel_confianza": "baja",
-            }
+        # 4. Generar respuesta probando modelos (Fallback)
+        models_to_try = [settings.MODEL] + settings.FALLBACK_MODELS
+        last_exception = None
+
+        for current_model in models_to_try:
+            try:
+                print(f"Intentando generar respuesta con el modelo: {current_model}")
+                response = self.client.models.generate_content(
+                    model=current_model,
+                    config=types.GenerateContentConfig(
+                        system_instruction=SYSTEM_PROMPT,
+                        temperature=0.2,
+                        max_output_tokens=1024,
+                        response_mime_type="application/json",
+                        response_schema=RESPONSE_SCHEMA,
+                    ),
+                    contents=prompt,
+                )
+                parsed_json = self._clean_json_response(response.text)
+                parsed_json["fuentes"] = fuentes  # Inyectar fuentes al JSON final
+                return parsed_json
+            except Exception as exc:
+                print(f"Error con el modelo {current_model}: {exc}")
+                last_exception = exc
+                continue # Probar con el siguiente modelo
+                
+        # Si todos los modelos fallan:
+        return {
+            "resumen": f"No se pudo completar la respuesta para: {question}",
+            "diagnostico": f"Todos los modelos fallaron. Último error: {last_exception}",
+            "pasos": [
+                "Verifica tu conexión a internet.",
+                "Espera unos minutos si los servidores están bajo alta demanda (503).",
+                "Asegúrate de que tu API Key de Gemini sea válida y tenga permisos."
+            ],
+            "solucion_recomendada": "Vuelve a intentarlo en unos minutos.",
+            "nivel_confianza": "baja",
+            "fuentes": []
+        }

@@ -1,0 +1,62 @@
+[
+    {
+        "question": "¿Qué debo hacer si la consola no enciende?",
+        "ground_truth": "Debes comprobar el cable de alimentación, probar la toma eléctrica y revisar el LED de la fuente o del gabinete."
+    },
+    {
+        "question": "¿Cómo soluciono problemas con el Wi-Fi?",
+        "ground_truth": "Reinicia el router, acerca la consola al punto de acceso y verifica que la contraseña sea correcta en la configuración de red."
+    },
+    {
+        "question": "Los controles Joy-Con se desconectan solos",
+        "ground_truth": "Verifica que tengan batería, actualiza el firmware desde la configuración y asegúrate de que no haya interferencias inalámbricas."
+    },
+    {
+        "question": "¿Cuál es la capital de Francia?",
+        "ground_truth": "No hay información relevante en el manual. (Esta pregunta evalúa el control de alucinaciones)."
+    },
+    {
+        "question": "La consola se calienta demasiado al jugar",
+        "ground_truth": "Asegúrate de que las rejillas de ventilación no estén obstruidas y usa la consola en un lugar fresco."
+    },
+    {
+        "question": "La pantalla está congelada",
+        "ground_truth": "Mantén pulsado el botón de encendido durante 12 segundos para forzar el reinicio."
+    },
+    {
+        "question": "¿Cómo puedo jugar a juegos de PlayStation 5 en la Switch 2?",
+        "ground_truth": "No hay información relevante en el manual. (Pregunta fuera de dominio)."
+    },
+    {
+        "question": "No se escucha el audio por los auriculares",
+        "ground_truth": "Verifica que los auriculares estén bien conectados o emparejados por Bluetooth, y revisa el nivel de volumen."
+    },
+    {
+        "question": "El juego no lee el cartucho",
+        "ground_truth": "Retira el cartucho, limpia suavemente los contactos y vuelve a insertarlo."
+    },
+    {
+        "question": "¿Cómo actualizo la consola?",
+        "ground_truth": "Ve a la Configuración de la consola, selecciona Sistema y luego Actualización de la consola."
+    },
+    {
+        "question": "¿Qué hago si se derrama líquido sobre la consola?",
+        "ground_truth": "Apaga la consola inmediatamente, desconecta todos los cables y contacta al soporte técnico. No intentes encenderla."
+    },
+    {
+        "question": "Mi tarjeta microSD no es reconocida",
+        "ground_truth": "Apaga la consola, extrae la tarjeta y vuelve a insertarla. Si no funciona, intenta formatearla en un PC."
+    },
+    {
+        "question": "¿Cuáles son las especificaciones de hardware completas de la consola?",
+        "ground_truth": "La información detallada de hardware interno suele no estar en el manual de usuario básico de solución de problemas."
+    },
+    {
+        "question": "El dock no manda imagen al televisor",
+        "ground_truth": "Verifica las conexiones HDMI y el cable de corriente del dock, e intenta cambiar el puerto HDMI en tu TV."
+    },
+    {
+        "question": "¿Cómo creo un usuario nuevo?",
+        "ground_truth": "Ve a Configuración de la consola, Usuarios y selecciona Añadir usuario."
+    }
+]
