@@ -507,7 +507,14 @@
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(payload)
         });
-        const result = await response.json();
+        const responseText = await response.text();
+        let result;
+        try {
+          result = JSON.parse(responseText);
+        } catch {
+          const preview = responseText.replace(/\s+/g, ' ').slice(0, 180);
+          throw new Error(`El servidor devolvió HTTP ${response.status} en lugar de JSON. Revisa RAG_BACKEND_URL y que el backend acepte POST /api/chat. Respuesta: ${preview}`);
+        }
         if (!response.ok) throw new Error(result.error || 'No se pudo procesar la consulta.');
         loading.remove();
         addMessage(formatAnswer(result), 'assistant');
