@@ -212,7 +212,7 @@ En el servicio del backend:
 - Configura `GEMINI_API_KEY`; el servicio debe proporcionar `PORT`.
 - Conserva `data/manuales/` y `data/vector_db/` junto al código del backend.
 
-En Vercel, importa el repositorio como proyecto estático, establece `RAG_BACKEND_URL` con el origen HTTPS del backend y vuelve a desplegar. `vercel.json` reescribe `POST /api/chat` al servicio externo; `.vercelignore` excluye del despliegue el entorno virtual, el código Python del RAG, los manuales y el índice. El endpoint no tiene autenticación, así que debe protegerse contra uso no autorizado antes de exponerlo públicamente.
+En Vercel, configura el Framework Preset como **Other** (también se declara como `"framework": null` en `vercel.json`), establece `RAG_BACKEND_URL` con el origen HTTPS del backend y vuelve a desplegar. `vercel.json` reescribe `POST /api/chat` al servicio externo; `.vercelignore` excluye del despliegue el entorno virtual, el código Python del RAG, los manuales y el índice. Los manuales son necesarios para reconstruir FAISS y el índice persistido permite iniciar sin reprocesarlos; ambos deben permanecer disponibles en el backend externo. El endpoint no tiene autenticación, así que debe protegerse contra uso no autorizado antes de exponerlo públicamente.
 
 Con el proyecto enlazado al CLI de Vercel, publica producción con:
 
