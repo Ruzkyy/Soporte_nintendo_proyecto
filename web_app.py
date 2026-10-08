@@ -1,3 +1,4 @@
+import os
 from pathlib import Path
 
 from flask import Flask, jsonify, request, send_from_directory
@@ -32,4 +33,8 @@ def chat():
 
 
 if __name__ == "__main__":
-    app.run(debug=True, host="127.0.0.1", port=5000)
+    app.run(
+        debug=os.getenv("FLASK_DEBUG", "false").lower() == "true",
+        host=os.getenv("HOST", "127.0.0.1"),
+        port=int(os.getenv("PORT", "5000")),
+    )

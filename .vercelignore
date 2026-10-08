@@ -1,0 +1,18 @@
+# Vercel only needs the static interface and its routing configuration.
+/.env*
+/.venv/
+/.agents/
+/AGENTS.md
+/MEMORY.md
+/README.md
+/docs/
+/data/
+/scripts/
+/src/
+/main.py
+/web_app.py
+/requirements-backend.txt
+/requirements-eval.txt
+/skills-lock.json
+__pycache__/
+*.py[cod]

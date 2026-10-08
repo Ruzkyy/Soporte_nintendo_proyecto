@@ -1,0 +1,4 @@
+-r requirements-backend.txt
+pandas==2.2.3
+ragas==0.2.8
+langchain-google-genai==2.0.0

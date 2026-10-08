@@ -34,17 +34,20 @@ Construir un asistente web que ayude a localizar y explicar instrucciones de los
 | Documentos | `pypdf` para extraer texto de PDF |
 | Configuración | `python-dotenv` y variables de entorno |
 | Evaluación | Ragas y un dataset local de 15 preguntas; el script de evaluación aún requiere actualización del modelo evaluador |
+| Despliegue | Frontend estático y proxy en Vercel; backend Flask en un servicio Python externo |
 
 Gemini se configura con `gemini-3.6-flash` como modelo principal y `gemini-3.5-flash` / `gemini-3.5-flash-lite` como respaldos predeterminados. Los nombres y la disponibilidad dependen de la API y de la cuenta utilizada.
 
 ## Arquitectura implementada
 
-La aplicación sigue una arquitectura cliente-servidor modular. Flask sirve el frontend y expone el endpoint de chat. El asistente coordina la recuperación y la generación; la carga de documentos, división de texto e índice vectorial están separados en módulos. La extracción, los embeddings y la búsqueda se ejecutan localmente. Si se configura Gemini, solo se envían la pregunta, el historial recibido y los fragmentos recuperados, no el corpus completo.
+La aplicación sigue una arquitectura cliente-servidor modular. En local, Flask sirve el frontend y el endpoint de chat. En Vercel, el frontend se sirve como archivo estático y las consultas a `/api/*` se reescriben al backend Flask alojado en un servicio Python externo. El asistente coordina la recuperación y la generación; la carga de documentos, división de texto e índice vectorial están separados en módulos. La extracción, los embeddings y la búsqueda se ejecutan en el backend. Si se configura Gemini, solo se envían la pregunta, el historial recibido y los fragmentos recuperados, no el corpus completo.
 
 ```mermaid
 flowchart LR
     U[Usuario] -->|Navega y consulta| F[Frontend HTML, CSS y JavaScript]
-    F -->|POST /api/chat| W[Flask]
+    F -->|Local: POST /api/chat| W[Flask]
+    F -->|Vercel: POST /api/chat| R[Rewrite hacia backend externo]
+    R --> W
     W --> A[SupportAssistant]
     A -->|Consulta| V[VectorStore]
     P[PDF locales] --> L[loaders.py]
@@ -93,7 +96,11 @@ El corpus actual contiene 10 manuales PDF europeos de Nintendo Switch 2, incluid
 ├── index.html                    # Interfaz del chat
 ├── main.py                       # Ejecución en consola
 ├── web_app.py                    # Aplicación Flask y API
-├── requirements.txt
+├── requirements.txt              # Sin dependencias para Vercel estático
+├── requirements-backend.txt      # Dependencias del backend RAG
+├── requirements-eval.txt         # Dependencias adicionales para evaluación
+├── vercel.json                   # Rewrite de /api hacia el backend
+├── .vercelignore                 # Excluye backend y corpus del despliegue Vercel
 └── README.md
 ```
 
@@ -129,7 +136,13 @@ source .venv/Scripts/activate
 Instala las dependencias:
 
 ```bash
-python -m pip install -r requirements.txt
+python -m pip install -r requirements-backend.txt
+```
+
+Para ejecutar la evaluación Ragas, instala también sus dependencias:
+
+```bash
+python -m pip install -r requirements-eval.txt
 ```
 
 ## Variables de entorno
@@ -142,6 +155,8 @@ GEMINI_MODEL=
 ```
 
 `GEMINI_API_KEY` es la variable recomendada. El código también reconoce `GOOGLE_API_KEY`. `GEMINI_MODEL` es opcional; si se omite, se usa `gemini-3.6-flash`. La disponibilidad de modelos puede cambiar y debe verificarse con la cuenta de Google utilizada.
+
+Para Vercel, configura `RAG_BACKEND_URL` en las variables de entorno del proyecto. Debe ser el origen HTTPS del backend, sin `/api/chat` ni una barra final. La clave Gemini solo se configura en el servicio del backend, nunca en Vercel ni en el frontend.
 
 ## Ejecución
 
@@ -186,6 +201,27 @@ Content-Type: application/json
 
 La respuesta incluye `resumen`, `diagnostico`, `pasos`, `solucion_recomendada`, `nivel_confianza` y `fuentes`. La aplicación no implementa autenticación; Flask se configura para escuchar en `127.0.0.1` y debe tratarse como un servidor de desarrollo local.
 
+## Despliegue
+
+El backend RAG importa PyTorch, Transformers, SciPy y FAISS, por lo que supera el límite estándar de 500 MB de Vercel Functions. Vercel aloja únicamente el frontend y reenvía las peticiones al backend, que debe ejecutarse en Render, Railway, Cloud Run u otro servicio Python con memoria suficiente.
+
+En el servicio del backend:
+
+- Instala `requirements-backend.txt`.
+- Usa `gunicorn --bind 0.0.0.0:$PORT web_app:app` como comando de inicio.
+- Configura `GEMINI_API_KEY`; el servicio debe proporcionar `PORT`.
+- Conserva `data/manuales/` y `data/vector_db/` junto al código del backend.
+
+En Vercel, importa el repositorio como proyecto estático, establece `RAG_BACKEND_URL` con el origen HTTPS del backend y vuelve a desplegar. `vercel.json` reescribe `POST /api/chat` al servicio externo; `.vercelignore` excluye del despliegue el entorno virtual, el código Python del RAG, los manuales y el índice. El endpoint no tiene autenticación, así que debe protegerse contra uso no autorizado antes de exponerlo públicamente.
+
+Con el proyecto enlazado al CLI de Vercel, publica producción con:
+
+```bash
+vercel --prod
+```
+
+Esta configuración no implica que el backend externo ya esté desplegado ni que Vercel haya completado una publicación remota.
+
 ## Privacidad y seguridad
 
 - Los manuales incluidos se leen y procesan localmente; el sistema no envía el corpus completo al modelo.
@@ -197,7 +233,7 @@ La respuesta incluye `resumen`, `diagnostico`, `pasos`, `solucion_recomendada`, 
 
 El repositorio incluye `data/eval_dataset.json` con 15 preguntas y `scripts/evaluate_rag.py`, que propone medir `faithfulness`, `answer_relevancy`, `context_precision` y `context_recall` con Ragas. El script es experimental y contiene configuración de un modelo evaluador antiguo (`gemini-1.5-flash`); debe actualizarse y validarse antes de usarlo. No se publican métricas verificadas en este repositorio.
 
-El chat y la recuperación local están implementados. La evaluación cuantitativa y una configuración de despliegue seguro siguen pendientes.
+El chat y la recuperación local están implementados. Vercel está configurado como frontend/proxy, pero el despliegue requiere alojar el backend externo y definir `RAG_BACKEND_URL`. La evaluación cuantitativa y la autenticación siguen pendientes.
 
 ## Aprendizajes técnicos
 
